@@ -6,6 +6,7 @@ use App\Models\Expense;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth; // <--- Add this
 
 
 class ExpenseController extends Controller
@@ -54,7 +55,13 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date',
         ]);
 
-        Expense::create($request->all());
+        Expense::create([
+            'title' => $request->title,
+            'category' => $request->category,
+            'amount' => $request->amount,
+            'expense_date' => $request->expense_date,
+            'user_id' => Auth::id(), // Assign current logged-in user
+        ]);
 
         return redirect()
             ->route('expenses.index')
@@ -103,6 +110,8 @@ class ExpenseController extends Controller
             $query->whereMonth('expense_date', $month);
         }
 
+        $totalExpense = (clone $query)->sum('amount');
+
         $data = $query
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
@@ -111,9 +120,10 @@ class ExpenseController extends Controller
         $categories = $data->pluck('category');
         $totals = $data->pluck('total');
 
-        return view('expenses.dashboard', compact(
+        return view('dashboard', compact(
             'categories',
             'totals',
+            'totalExpense',
             'year',
             'month'
         ));

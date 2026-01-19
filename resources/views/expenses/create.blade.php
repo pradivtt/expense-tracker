@@ -1,52 +1,42 @@
-@extends('layouts.app')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ isset($expense) ? 'Edit' : 'Add' }} Expense</h2>
+    </x-slot>
 
-@section('content')
-<h3>Add Expense</h3>
+    <div class="py-6">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            <form method="POST" action="{{ isset($expense) ? route('expenses.update', $expense) : route('expenses.store') }}">
+                @csrf
+                @if(isset($expense))
+                    @method('PUT')
+                @endif
 
-<form action="{{ route('expenses.store') }}" method="POST">
-    @csrf
+                <div class="mb-4">
+                    <label class="block">Title</label>
+                    <input type="text" name="title" value="{{ old('title', $expense->title ?? '') }}" class="border px-2 py-1 w-full">
+                    @error('title') <span class="text-red-500">{{ $message }}</span> @enderror
+                </div>
 
-    <div class="mb-3">
-        <label>Title</label>
-        <input type="text" name="title"
-               class="form-control @error('title') is-invalid @enderror"
-               value="{{ old('title') }}">
-        @error('title')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+                <div class="mb-4">
+                    <label class="block">Category</label>
+                    <input type="text" name="category" value="{{ old('category', $expense->category ?? '') }}" class="border px-2 py-1 w-full">
+                    @error('category') <span class="text-red-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="mb-4">
+                    <label class="block">Amount</label>
+                    <input type="number" name="amount" value="{{ old('amount', $expense->amount ?? '') }}" class="border px-2 py-1 w-full">
+                    @error('amount') <span class="text-red-500">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="mb-4">
+                    <label class="block">Date</label>
+                    <input type="date" name="expense_date" value="{{ old('expense_date', isset($expense) ? $expense->expense_date->format('Y-m-d') : '') }}" class="border px-2 py-1 w-full">
+                    @error('expense_date') <span class="text-red-500">{{ $message }}</span> @enderror
+                </div>
+
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">{{ isset($expense) ? 'Update' : 'Add' }}</button>
+            </form>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label>Category</label>
-        <input type="text" name="category"
-               class="form-control @error('category') is-invalid @enderror"
-               value="{{ old('category') }}">
-        @error('category')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label>Amount</label>
-        <input type="number" step="0.01" name="amount"
-               class="form-control @error('amount') is-invalid @enderror"
-               value="{{ old('amount') }}">
-        @error('amount')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label>Date</label>
-        <input type="date" name="expense_date"
-               class="form-control @error('expense_date') is-invalid @enderror"
-               value="{{ old('expense_date') }}">
-        @error('expense_date')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <button class="btn btn-success">Save</button>
-    <a href="{{ route('expenses.index') }}" class="btn btn-secondary">Back</a>
-</form>
-@endsection
+</x-app-layout>

@@ -1,13 +1,28 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ExpenseController;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\ExpenseController;
-
 Route::get('/', function () {
-    return redirect()->route('expenses.index');
+    return view('welcome');
 });
 
-Route::resource('expenses', ExpenseController::class);
-Route::get('/dashboard', [ExpenseController::class, 'dashboard'])
-    ->name('expenses.dashboard');
+Route::middleware('auth')->group(function () {
+    // ✅ Dashboard uses ExpenseController
+    Route::get('/dashboard', [ExpenseController::class, 'dashboard'])
+        ->name('dashboard');
+
+    Route::get('/expenses', [ExpenseController::class, 'index'])
+        ->name('index');
+
+    // ✅ Expense CRUD (only once)
+    Route::resource('expenses', ExpenseController::class);
+
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__ . '/auth.php';
