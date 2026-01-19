@@ -99,20 +99,48 @@ class ExpenseController extends Controller
     }
 
 
-    public function dashboard(Request $request)
+    public function dashboard()
     {
-        $year = $request->year ?? now()->year;
-        $month = $request->month; // nullable
+        $userId = auth()->id();
 
-        $query = Expense::whereYear('expense_date', $year);
+        // Total expense
+        $totalExpense = Expense::where('user_id', $userId)->sum('amount');
 
-        if ($month) {
-            $query->whereMonth('expense_date', $month);
+        // Highest spending day
+        $highest = Expense::where('user_id', $userId)
+            ->selectRaw('expense_date, SUM(amount) as total')
+            ->groupBy('expense_date')
+            ->orderByDesc('total')
+            ->first();
+        $highestDay = $highest->expense_date ?? null;
+        $highestAmount = $highest->total ?? null;
+
+        // Top category
+        $top = Expense::where('user_id', $userId)
+            ->selectRaw('category, SUM(amount) as total')
+            ->groupBy('category')
+            ->orderByDesc('total')
+            ->first();
+        $topCategory = $top->category ?? null;
+        $topCategoryAmount = $top->total ?? null;
+
+        // Monthly expenses (last 12 months)
+        $monthly = Expense::where('user_id', $userId)
+            ->selectRaw('MONTH(expense_date) as month, SUM(amount) as total')
+            ->where('expense_date', '>=', now()->subMonths(11)->startOfMonth())
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        $monthlyLabels = [];
+        $monthlyTotals = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $monthlyLabels[] = Carbon::create()->month($i)->format('M');
+            $monthlyTotals[] = $monthly->firstWhere('month', $i)->total ?? 0;
         }
 
-        $totalExpense = (clone $query)->sum('amount');
-
-        $data = $query
+        // Category breakdown
+        $data = Expense::where('user_id', $userId)
             ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->get();
@@ -121,11 +149,15 @@ class ExpenseController extends Controller
         $totals = $data->pluck('total');
 
         return view('dashboard', compact(
-            'categories',
-            'totals',
             'totalExpense',
-            'year',
-            'month'
+            'highestDay',
+            'highestAmount',
+            'topCategory',
+            'topCategoryAmount',
+            'monthlyLabels',
+            'monthlyTotals',
+            'categories',
+            'totals'
         ));
     }
 }
